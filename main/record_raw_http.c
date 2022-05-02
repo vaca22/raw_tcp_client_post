@@ -52,81 +52,19 @@ audio_pipeline_handle_t pipeline;
 audio_element_handle_t i2s_stream_reader;
 audio_element_handle_t http_stream_writer;
 
-esp_err_t _http_stream_event_handle(http_stream_event_msg_t *msg)
-{
-    esp_http_client_handle_t http = (esp_http_client_handle_t)msg->http_client;
-    char len_buf[16];
-    static int total_write = 0;
 
-    if (msg->event_id == HTTP_STREAM_PRE_REQUEST) {
-        // set header
-        ESP_LOGI(TAG, "[ + ] HTTP client HTTP_STREAM_PRE_REQUEST, lenght=%d", msg->buffer_len);
-        esp_http_client_set_method(http, HTTP_METHOD_POST);
-        char dat[10] = {0};
-        snprintf(dat, sizeof(dat), "%d", EXAMPLE_AUDIO_SAMPLE_RATE);
-        esp_http_client_set_header(http, "x-audio-sample-rates", dat);
-        memset(dat, 0, sizeof(dat));
-        snprintf(dat, sizeof(dat), "%d", EXAMPLE_AUDIO_BITS);
-        esp_http_client_set_header(http, "x-audio-bits", dat);
-        memset(dat, 0, sizeof(dat));
-        snprintf(dat, sizeof(dat), "%d", EXAMPLE_AUDIO_CHANNELS);
-        esp_http_client_set_header(http, "x-audio-channel", dat);
-        total_write = 0;
-        return ESP_OK;
-    }
-
-    if (msg->event_id == HTTP_STREAM_ON_REQUEST) {
-        // write data
-        int wlen = sprintf(len_buf, "%x\r\n", msg->buffer_len);
-        if (esp_http_client_write(http, len_buf, wlen) <= 0) {
-            return ESP_FAIL;
-        }
-        if (esp_http_client_write(http, msg->buffer, msg->buffer_len) <= 0) {
-            return ESP_FAIL;
-        }
-        if (esp_http_client_write(http, "\r\n", 2) <= 0) {
-            return ESP_FAIL;
-        }
-        total_write += msg->buffer_len;
-        printf("\033[A\33[2K\rTotal bytes written: %d\n", total_write);
-        return msg->buffer_len;
-    }
-
-    if (msg->event_id == HTTP_STREAM_POST_REQUEST) {
-        ESP_LOGI(TAG, "[ + ] HTTP client HTTP_STREAM_POST_REQUEST, write end chunked marker");
-        if (esp_http_client_write(http, "0\r\n\r\n", 5) <= 0) {
-            return ESP_FAIL;
-        }
-        return ESP_OK;
-    }
-
-    if (msg->event_id == HTTP_STREAM_FINISH_REQUEST) {
-        ESP_LOGI(TAG, "[ + ] HTTP client HTTP_STREAM_FINISH_REQUEST");
-        char *buf = calloc(1, 64);
-        assert(buf);
-        int read_len = esp_http_client_read(http, buf, 64);
-        if (read_len <= 0) {
-            free(buf);
-            return ESP_FAIL;
-        }
-        buf[read_len] = 0;
-        ESP_LOGI(TAG, "Got HTTP Response = %s", (char *)buf);
-        free(buf);
-        return ESP_OK;
-    }
-    return ESP_OK;
-}
 
 static esp_err_t input_key_service_cb(periph_service_handle_t handle, periph_service_event_t *evt, void *ctx)
 {
     audio_element_handle_t http_stream_writer = (audio_element_handle_t)ctx;
     if (evt->type == INPUT_KEY_SERVICE_ACTION_CLICK) {
+        ESP_LOGE("fuck","fuck");
         switch ((int)evt->data) {
-            case INPUT_KEY_USER_ID_MODE:
-                ESP_LOGW(TAG, "[ * ] [Set] input key event, exit the demo ...");
-                xEventGroupSetBits(EXIT_FLAG, DEMO_EXIT_BIT);
-                break;
-            case INPUT_KEY_USER_ID_REC:
+//            case INPUT_KEY_USER_ID_MODE:
+//                ESP_LOGW(TAG, "[ * ] [Set] input key event, exit the demo ...");
+//                xEventGroupSetBits(EXIT_FLAG, DEMO_EXIT_BIT);
+//                break;
+            case    INPUT_KEY_USER_ID_VOLDOWN   :
                 ESP_LOGE(TAG, "[ * ] [Rec] input key event, resuming pipeline ...");
                 /*
                  * There is no effect when follow APIs output warning message on the first time record
@@ -143,11 +81,8 @@ static esp_err_t input_key_service_cb(periph_service_handle_t handle, periph_ser
         }
     } else if (evt->type == INPUT_KEY_SERVICE_ACTION_CLICK_RELEASE || evt->type == INPUT_KEY_SERVICE_ACTION_PRESS_RELEASE) {
         switch ((int)evt->data) {
-            case INPUT_KEY_USER_ID_REC:
+            case    INPUT_KEY_USER_ID_VOLDOWN  :
                 ESP_LOGE(TAG, "[ * ] [Rec] key released, stop pipeline ...");
-                /*
-                 * Set the i2s_stream_reader ringbuffer is done to flush the buffering voice data.
-                 */
                 audio_element_set_ringbuf_done(i2s_stream_reader);
                 break;
         }
@@ -182,8 +117,8 @@ void app_main(void)
     esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
 
     periph_wifi_cfg_t wifi_cfg = {
-        .ssid = CONFIG_WIFI_SSID,
-        .password = CONFIG_WIFI_PASSWORD,
+        .ssid = "lghGood",
+        .password = "22345678",
     };
     esp_periph_handle_t wifi_handle = periph_wifi_init(&wifi_cfg);
 
@@ -204,7 +139,7 @@ void app_main(void)
 
     tcp_stream_cfg_t http_cfg = TCP_STREAM_CFG_DEFAULT();
     http_cfg.port=8899;
-    http_cfg.host="192.168.6.111";
+    http_cfg.host="192.168.4.1";
     http_cfg.type=AUDIO_STREAM_WRITER;
     http_stream_writer = tcp_stream_init(&http_cfg);
 
@@ -213,6 +148,7 @@ void app_main(void)
     i2s_cfg.type = AUDIO_STREAM_READER;
     i2s_cfg.out_rb_size = 16 * 1024; // Increase buffer to avoid missing data in bad network conditions
     i2s_cfg.i2s_port = CODEC_ADC_I2S_PORT;
+    i2s_cfg.i2s_config.sample_rate=48000;
     i2s_stream_reader = i2s_stream_init(&i2s_cfg);
 
     ESP_LOGI(TAG, "[3.3] Register all elements to audio pipeline");
