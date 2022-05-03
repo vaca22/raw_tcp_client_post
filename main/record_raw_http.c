@@ -117,7 +117,8 @@ void app_main(void)
     esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
 
     periph_wifi_cfg_t wifi_cfg = {
-        .ssid = "lghGood",
+       // .ssid = "lghGood",
+            .ssid = "vaca",
         .password = "22345678",
     };
     esp_periph_handle_t wifi_handle = periph_wifi_init(&wifi_cfg);
@@ -139,7 +140,7 @@ void app_main(void)
 
     tcp_stream_cfg_t http_cfg = TCP_STREAM_CFG_DEFAULT();
     http_cfg.port=8899;
-    http_cfg.host="192.168.4.1";
+    http_cfg.host="192.168.6.111";
     http_cfg.type=AUDIO_STREAM_WRITER;
     http_stream_writer = tcp_stream_init(&http_cfg);
 
@@ -168,7 +169,7 @@ void app_main(void)
     input_key_service_add_key(input_ser, input_key_info, INPUT_KEY_NUM);
     periph_service_set_callback(input_ser, input_key_service_cb, (void *)http_stream_writer);
 
-    i2s_stream_set_clk(i2s_stream_reader, EXAMPLE_AUDIO_SAMPLE_RATE, EXAMPLE_AUDIO_BITS, EXAMPLE_AUDIO_CHANNELS);
+    i2s_stream_set_clk(i2s_stream_reader, 48000, EXAMPLE_AUDIO_BITS, 2);
 
     ESP_LOGI(TAG, "[ 4 ] Press [Rec] button to record, Press [Mode] to exit");
     xEventGroupWaitBits(EXIT_FLAG, DEMO_EXIT_BIT, true, false, portMAX_DELAY);
