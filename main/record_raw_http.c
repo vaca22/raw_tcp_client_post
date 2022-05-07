@@ -14,7 +14,7 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
-
+#include "tcp_client_stream2.h"
 #include "esp_http_client.h"
 #include "sdkconfig.h"
 #include "audio_element.h"
@@ -31,7 +31,7 @@
 #include "filter_resample.h"
 #include "input_key_service.h"
 #include "audio_idf_version.h"
-
+#include "tcp_client_stream2.h"
 #if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0))
 #include "esp_netif.h"
 #else
@@ -117,8 +117,8 @@ void app_main(void)
     esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
 
     periph_wifi_cfg_t wifi_cfg = {
-       // .ssid = "lghGood",
-            .ssid = "vaca",
+        .ssid = "lghGood",
+//            .ssid = "vaca",
         .password = "22345678",
     };
     esp_periph_handle_t wifi_handle = periph_wifi_init(&wifi_cfg);
@@ -140,9 +140,9 @@ void app_main(void)
 
     tcp_stream_cfg_t http_cfg = TCP_STREAM_CFG_DEFAULT();
     http_cfg.port=8899;
-    http_cfg.host="192.168.6.111";
+    http_cfg.host="192.168.4.1";
     http_cfg.type=AUDIO_STREAM_WRITER;
-    http_stream_writer = tcp_stream_init(&http_cfg);
+    http_stream_writer = tcp_stream_init2(&http_cfg);
 
     ESP_LOGI(TAG, "[3.2] Create i2s stream to read audio data from codec chip");
     i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT();
