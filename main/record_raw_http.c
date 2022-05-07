@@ -126,6 +126,7 @@ void app_main(void)
     esp_periph_start(set, wifi_handle);
     periph_wifi_wait_for_connected(wifi_handle, portMAX_DELAY);
 
+
     ESP_LOGI(TAG, "[ 2 ] Start codec chip");
     audio_board_handle_t board_handle = audio_board_init();
     audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_ENCODE, AUDIO_HAL_CTRL_START);
@@ -170,26 +171,38 @@ void app_main(void)
 
     i2s_stream_set_clk(i2s_stream_reader, EXAMPLE_AUDIO_SAMPLE_RATE, EXAMPLE_AUDIO_BITS, EXAMPLE_AUDIO_CHANNELS);
 
-    ESP_LOGI(TAG, "[ 4 ] Press [Rec] button to record, Press [Mode] to exit");
-    xEventGroupWaitBits(EXIT_FLAG, DEMO_EXIT_BIT, true, false, portMAX_DELAY);
-
-    ESP_LOGI(TAG, "[ 5 ] Stop audio_pipeline");
+    vTaskDelay(100);
     audio_pipeline_stop(pipeline);
     audio_pipeline_wait_for_stop(pipeline);
+    audio_pipeline_reset_ringbuffer(pipeline);
+    audio_pipeline_reset_elements(pipeline);
     audio_pipeline_terminate(pipeline);
 
-    audio_pipeline_unregister(pipeline, http_stream_writer);
-    audio_pipeline_unregister(pipeline, i2s_stream_reader);
-
-    /* Terminal the pipeline before removing the listener */
-    audio_pipeline_remove_listener(pipeline);
-
-    /* Stop all periph before removing the listener */
-    esp_periph_set_stop_all(set);
-
-    /* Release all resources */
-    audio_pipeline_deinit(pipeline);
-    audio_element_deinit(http_stream_writer);
-    audio_element_deinit(i2s_stream_reader);
-    esp_periph_set_destroy(set);
+    audio_element_set_uri(http_stream_writer, CONFIG_SERVER_URI);
+    audio_pipeline_run(pipeline);
+    while (1){
+        vTaskDelay(100);
+    }
+//    ESP_LOGI(TAG, "[ 4 ] Press [Rec] button to record, Press [Mode] to exit");
+//    xEventGroupWaitBits(EXIT_FLAG, DEMO_EXIT_BIT, true, false, portMAX_DELAY);
+//
+//    ESP_LOGI(TAG, "[ 5 ] Stop audio_pipeline");
+//    audio_pipeline_stop(pipeline);
+//    audio_pipeline_wait_for_stop(pipeline);
+//    audio_pipeline_terminate(pipeline);
+//
+//    audio_pipeline_unregister(pipeline, http_stream_writer);
+//    audio_pipeline_unregister(pipeline, i2s_stream_reader);
+//
+//    /* Terminal the pipeline before removing the listener */
+//    audio_pipeline_remove_listener(pipeline);
+//
+//    /* Stop all periph before removing the listener */
+//    esp_periph_set_stop_all(set);
+//
+//    /* Release all resources */
+//    audio_pipeline_deinit(pipeline);
+//    audio_element_deinit(http_stream_writer);
+//    audio_element_deinit(i2s_stream_reader);
+//    esp_periph_set_destroy(set);
 }
