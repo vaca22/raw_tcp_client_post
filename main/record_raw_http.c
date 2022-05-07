@@ -118,7 +118,7 @@ void app_main(void)
 
     periph_wifi_cfg_t wifi_cfg = {
         .ssid = "lghGood",
-        .password = "22345678",
+//        .password = "22345678",
     };
     esp_periph_handle_t wifi_handle = periph_wifi_init(&wifi_cfg);
 
